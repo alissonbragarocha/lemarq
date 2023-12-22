@@ -1,0 +1,10 @@
+.vscode/*
+app/config/*
+!app/config/application.ini
+app/images/*
+app/output/*
+app/database/*
+files/*
+tmp/*
+vendor/*
+composer.lock

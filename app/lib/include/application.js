@@ -50,7 +50,7 @@ Adianti.onBeforeLoad = function(url)
     loading = true; 
     setTimeout(function(){showLoading()}, 400);
     if (url.indexOf('&static=1') == -1 && url.indexOf('&noscroll=1') == -1) {
-        $("html, body").animate({ scrollTop: 0 }, "fast");
+        //$("html, body").animate({ scrollTop: 0 }, "fast");
     }
 };
 

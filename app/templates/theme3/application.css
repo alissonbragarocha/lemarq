@@ -1,3 +1,35 @@
+.btn {
+    padding: 6px 8px;
+}
+
+.header-actions > .tpagenavigation {
+    padding-top: 0;
+    margin-right: 20px;
+}
+
+.header-actions > .tpagenavigation_resume {
+    display: none;
+}
+
+@media (max-width: 1600px) {
+    .header-actions > .tpagenavigation
+    {
+        display:none;
+    }
+}
+
+@media (max-width: 1300px) {
+    form#quick_search
+    {
+        display:none !important;
+    }
+}
+
+.tpagenavigation {
+    text-align: center;
+}
+
+
 /** General **/
 html, body
 {
@@ -856,7 +888,7 @@ nav.navbar {
 
 button.btn-default
 {
-    height:34px;
+    height:36px;
 }
 
 button.btn-primary

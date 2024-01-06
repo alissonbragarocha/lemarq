@@ -7,7 +7,9 @@ class Produto extends TRecord
 {
     const TABLENAME = 'produto';
     const PRIMARYKEY= 'id';
-    const IDPOLICY =  'serial'; // {max, serial}    
+    const IDPOLICY =  'serial'; // {max, serial}
+
+    use SystemChangeLogTrait;
     
     /**
      * Constructor method

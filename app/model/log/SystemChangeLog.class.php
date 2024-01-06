@@ -14,6 +14,8 @@ class SystemChangeLog extends TRecord
     const TABLENAME    = 'system_change_log';
     const PRIMARYKEY   = 'id';
     const IDPOLICY     = 'max'; // {max, serial}
+
+    private $system_user;
     
     /**
      * Constructor method
@@ -25,6 +27,7 @@ class SystemChangeLog extends TRecord
         parent::addAttribute('log_year');
         parent::addAttribute('log_month');
         parent::addAttribute('log_day');
+        parent::addAttribute('system_user_id');
         parent::addAttribute('login');
         parent::addAttribute('tablename');
         parent::addAttribute('primarykey');
@@ -61,5 +64,15 @@ class SystemChangeLog extends TRecord
         $log = str_replace('):', '):<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', $log);
         
         return $log;
+    }
+
+    public function get_system_user()
+    {
+        if (empty($this->system_user)) {
+            TTransaction::open('permission');
+            $this->system_user = new SystemUser($this->system_user_id);
+            TTransaction::close();
+        }
+        return $this->system_user;
     }
 }

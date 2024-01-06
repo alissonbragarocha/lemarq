@@ -46,6 +46,7 @@ class SystemChangeLogService
                 $log->log_year   = date('Y');
                 $log->log_month  = date('m');
                 $log->log_day    = date('d');
+                $log->system_user_id = TSession::getValue('userid');
                 $log->login      = TSession::getValue('login');
                 $log->primarykey = $pk;
                 $log->pkvalue    = $activeRecord->$pk;
@@ -74,6 +75,7 @@ class SystemChangeLogService
                 $log->log_year   = date('Y');
                 $log->log_month  = date('m');
                 $log->log_day    = date('d');
+                $log->system_user_id = TSession::getValue('userid');
                 $log->login      = TSession::getValue('login');
                 $log->primarykey = $pk;
                 $log->pkvalue    = $activeRecord->$pk;
@@ -99,6 +101,7 @@ class SystemChangeLogService
                 $log->log_year   = date('Y');
                 $log->log_month  = date('m');
                 $log->log_day    = date('d');
+                $log->system_user_id = TSession::getValue('userid');
                 $log->login      = TSession::getValue('login');
                 $log->primarykey = $pk;
                 $log->pkvalue    = $activeRecord->$pk;

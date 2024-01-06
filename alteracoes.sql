@@ -8,3 +8,7 @@ CREATE TABLE `lemarq`.`pedido_produto` (`id` INT NOT NULL AUTO_INCREMENT , `pedi
 ALTER TABLE `pedido_produto` ADD FOREIGN KEY (`pedido_id`) REFERENCES `pedido`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 ALTER TABLE `pedido_produto` ADD FOREIGN KEY (`produto_id`) REFERENCES `produto`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 INSERT INTO `sexo` (`id`, `descricao`, `abreviacao`) VALUES ('1', 'Masculino', 'M'), ('2', 'Feminino', 'F');
+
+-- Base de dados de log
+ALTER TABLE `system_change_log` ADD `system_user_id` INT NULL DEFAULT NULL AFTER `log_date`;
+

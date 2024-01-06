@@ -66,7 +66,7 @@ class ProdutoList extends TPage
         $btnQS->style= 'height: 37px;';
         $btnQS->{'title'} = 'Buscar';
         $btnClearQS = TButton::create('clear', [$this, 'onClearQS'], '', 'fa:ban red');
-        $btnClearQS->style= 'width: 32px; height: 37px; margin-right:20px;';
+        $btnClearQS->style= 'width: 32px; height: 37px;';
         $btnClearQS->{'title'} = 'Limpar filtro';
         
         $this->quick_search = new TForm('quick_search');
@@ -131,20 +131,8 @@ class ProdutoList extends TPage
         $this->pageNavigation = new TPageNavigation;
         $this->pageNavigation->setAction(new TAction([$this, 'onReload']));
         $this->pageNavigation->setWidth($this->datagrid->getWidth());
-        $this->pageNavigation->style = 'padding-top:0px; margin-right:10px;';
 
-        $this->panel = new TPanelGroup(new TLabel($this->applicationTitle, '#000000', 14, 'b'), 'white');
-        $this->panel->addHeaderWidget($this->pageNavigation);        
-        $this->panel->addHeaderWidget($this->quick_search);
-        $this->panel->addHeaderActionLink(_t('New'), new TAction([$this->editForm, 'onEdit']), 'fa:plus green');
-        $this->filter_label = $this->panel->addHeaderActionLink('Filtros', new TAction([$this, 'onShowFilters']), 'fa:filter');
-        $this->panel->add($this->createSelector());
-        $this->panel->add($this->datagrid);
-        $this->panel->addFooter($this->pageNavigation);
-        
-        $this->onCreateUpdateBtnFilter();        
-        $this->onDropdownExport();        
-        $this->onDropdownSelectLimit();
+        $this->onCreatePanelList();
                 
         // vertical box container
         $container = new TVBox;
@@ -245,7 +233,7 @@ class ProdutoList extends TPage
         // keep the search data in the session
         TSession::setValue(__CLASS__.'_filter_data', $data);
         
-        $this->onCreateUpdateBtnFilter();
+        $this->onUpdateBtnFilter();
         $this->resetParamAndOnReload();
     }
     
@@ -346,5 +334,10 @@ class ProdutoList extends TPage
             new TMessage('error', $e->getMessage());
             TTransaction::rollback();
         }
+    }
+
+    public function onShow()
+    {
+        
     }
 }

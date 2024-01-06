@@ -19,4 +19,25 @@ trait GeneralTrait
             });
         "); // Fecha cortina lateral ao precionar ESC.
     }
+    
+    public function formatarMoeda($value, $object, $row)
+    {
+        if (!empty($value))
+            return number_format($value, 2, ',', '.');
+        return ;
+    }
+    
+    public function formatarDataHora($value, $object, $row)
+    {
+        if (!empty($value))
+            return (new DateTime($value))->format('d/m/Y H:i:s');
+        return ;
+    }
+    
+    public function formatarData($value, $object, $row)
+    {
+        if (!empty($value))
+            return (new DateTime($value))->format('d/m/Y');
+        return ;
+    }
 }

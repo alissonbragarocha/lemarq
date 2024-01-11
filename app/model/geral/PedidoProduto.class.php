@@ -8,6 +8,8 @@ class PedidoProduto extends TRecord
     const TABLENAME = 'pedido_produto';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'serial'; // {max, serial}
+
+    use SystemChangeLogTrait;
     
     private $pedido;
     private $produto;

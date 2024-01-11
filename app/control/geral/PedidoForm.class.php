@@ -1,20 +1,20 @@
 <?php
 /**
- * ProdutoForm Form
+ * PedidoForm Form
  * @author  <your name here>
  */
-class ProdutoForm extends TPage
+class PedidoForm extends TPage
 {
     protected $form; // form
     protected $datagrid;
-    protected $historico;
+    protected $produtos;
 
     private $database       = 'lemarq';
-    private $activeRecord   = 'Produto';
-    private $listView       = 'ProdutoList';
+    private $activeRecord   = 'Pedido';
+    private $listView       = 'PedidoList';
     private $fieldFocus     = 'descricao';
     private $keyField       = 'id';
-    private $formTitle      = 'Cadastro de Produto';
+    private $formTitle      = 'Cadastro de Pedido';
     private $right_panel;
 
     use FormTrait;
@@ -29,45 +29,47 @@ class ProdutoForm extends TPage
         // parent::setProperty('override', 'true');
 
         $this->right_panel = $right_panel; // indica se o formulario está embutido noutra coisa.
-                                     // Se estiver, alguns botoes e funcionalidades ficam limitados.
+                               // Se estiver, alguns botoes e funcionalidades ficam limitados.
         if ($this->right_panel) {
             parent::setTargetContainer('adianti_right_panel');
         }
 
         // creates the form
-        $this->form = new BootstrapFormBuilder('form_Produto');
+        $this->form = new BootstrapFormBuilder('form_Pedido');
         $this->form->setFormTitle(new TLabel($this->formTitle, '#000000', 14, 'b'));
         
-        $this->form->setFieldSizes('100%');
-
         // create the form fields
         $id = new TEntry('id');
-        $descricao = new TEntry('descricao');
-        $valor_compra = new TNumeric('valor_compra', 2, ',', '.', true);
-        $valor_venda = new TNumeric('valor_venda', 2, ',', '.', true);
+        $cliente_id = new TDBUniqueSearch('cliente_id', $this->database, 'Cliente', 'id', 'nome');
+        $usuario_cadastro_id = new TDBUniqueSearch('usuario_cadastro_id', 'permission', 'SystemUser', 'id', 'name');
+        $data_cadastro = new TDateTime('data_cadastro');
+            
+        $button = new TActionLink('', new TAction(['ClienteList', 'onReload'], array_merge($param, ['adianti_open_tab'=>1, 'adianti_tab_name'=>'Cliente'])), 'green', null, null, 'fa:plus-circle');
+        $button->class = 'btn btn-default inline-button';
+        $button->title = _t('New');
+        $cliente_id->after($button);
 
-        $historico = new BPageContainer();
+        $produtos = new BPageContainer();
 
         // set sizes
         $id->setSize('100%');
-        $descricao->setSize('100%');
-        $valor_compra->setSize('100%');
-        $valor_venda->setSize('100%');
-
-        $historico->setSize('100%');
+        $cliente_id->setSize('calc(100% - 30px)');
+        $usuario_cadastro_id->setSize('100%');
+        $data_cadastro->setSize('100%');
+        $produtos->setSize('100%');
 
         if (!empty($id))
         {
             $id->setEditable(FALSE);
+            $usuario_cadastro_id->setEditable(FALSE);
+            $data_cadastro->setEditable(FALSE);
         }
 
-        $historico->setAction(new TAction(['HistoricoList', 'onShow']));
-        $historico->setId('b645e36f5cc3c4');
-        $historico->hide();
+        $produtos->setAction(new TAction(['PedidoProdutoList', 'onShow']));
+        $produtos->setId('pedido_produtos');
+        $produtos->hide();
 
-        $descricao->addValidation( '<b>Descrição</b>', new TRequiredValidator );
-        $valor_compra->addValidation( '<b>Valor de compra</b>', new TRequiredValidator );
-        $valor_venda->addValidation( '<b>Valor de venda</b>', new TRequiredValidator );
+        $cliente_id->addValidation( '<b>Descrição</b>', new TRequiredValidator );
         
         $loadingContainer = new TElement('div');
         $loadingContainer->style = 'text-align:center; padding:50px';
@@ -78,20 +80,20 @@ class ProdutoForm extends TPage
         $loadingContainer->add($icon);
         $loadingContainer->add('<br>Carregando');
 
-        $historico->add($loadingContainer);
+        $produtos->add($loadingContainer);
 
-        $this->historico = $historico;
+        $this->produtos = $produtos;
 
         $this->form->appendPage('Dados gerais');
 
         // add the fields
         $this->form->addFields( [ new TLabel('Id'), $id ] );
-        $this->form->addFields( [ new TLabel('Descrição'), $descricao ] );
-        $this->form->addFields( [ new TLabel('Valor de compra'), $valor_compra ] );
-        $this->form->addFields( [ new TLabel('Valor de venda'), $valor_venda ] );
+        $this->form->addFields( [ new TLabel('Cliente'), $cliente_id ] );
+        $this->form->addFields( [ new TLabel('Usuário de cadastro'), $usuario_cadastro_id ] );
+        $this->form->addFields( [ new TLabel('Data de cadastro'), $data_cadastro ] );
         
-        $this->form->appendPage("Históricos");
-        $row = $this->form->addFields([$historico]);
+        $this->form->appendPage("Produtos");
+        $row = $this->form->addFields([$produtos]);
         $row->layout = ['col-sm-12'];
 
         // create the form actions
@@ -135,6 +137,12 @@ class ProdutoForm extends TPage
             
             $object = new $this->activeRecord;;  // create an empty object
             $object->fromArray( (array) $data); // load the object with data
+
+            if (empty($object->id))
+                $object->usuario_cadastro_id = TSession::getValue('userid');
+
+            unset($object->data_cadastro);
+
             $object->store(); // save the object
             
             // get the generated id
@@ -182,9 +190,8 @@ class ProdutoForm extends TPage
                 $object = new ($this->activeRecord)($key); // instantiates the Active Record
                 $this->form->setData($object); // fill the form
                 
-                $this->historico->unhide();
-                $this->historico->setParameter('tablename', $this->activeRecord::TABLENAME);
-                $this->historico->setParameter('key', $object->{$this->keyField});
+                $this->produtos->unhide();
+                $this->produtos->setParameter('key', $object->{$this->keyField});
 
                 TTransaction::close(); // close the transaction
             }

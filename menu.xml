@@ -3,6 +3,14 @@
   <menuitem label="Cadastro">
     <icon>fas:home fa-fw</icon>
     <menu>
+      <menuitem label="Cliente">
+        <action>ClienteList</action>
+        <icon>far:circle fa-fw</icon>
+      </menuitem>
+      <menuitem label="Pedido">
+        <action>PedidoList</action>
+        <icon>far:circle fa-fw</icon>
+      </menuitem>
       <menuitem label="Produto">
         <action>ProdutoList</action>
         <icon>far:circle fa-fw</icon>
@@ -101,11 +109,11 @@
     <menu>
       <menuitem label="_t{Page management}">
         <action>SystemWikiList</action>
-        <icon>fab fa:wikipedia-w fa-fw</icon>
+        <icon>fab fa fa-fw fa-fw</icon>
       </menuitem>
       <menuitem label="_t{Search pages}">
         <action>SystemWikiSearchList</action>
-        <icon>fa fa:search fa-fw</icon>
+        <icon>fa fa fa-fw fa-fw</icon>
       </menuitem>
     </menu>
   </menuitem>

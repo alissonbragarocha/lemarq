@@ -1,9 +1,12 @@
 <?php
+
+use Adianti\Widget\Wrapper\TDBRadioGroup;
+
 /**
- * ProdutoList Listing
+ * ClienteList Listing
  * @author  <your name here>
  */
-class ProdutoList extends TPage
+class ClienteList extends TPage
 {
     private $quick_search; // form
     private $filterForm; // form
@@ -16,15 +19,16 @@ class ProdutoList extends TPage
     private $selectAll;
 
     private $database         = 'lemarq';
-    private $activeRecord     = 'Produto';
-    private $applicationTitle = 'Listagem de produtos';
-    private $filterFormTitle  = 'Filtro de produtos';
-    private $editForm         = 'ProdutoForm';
+    private $activeRecord     = 'Cliente';
+    private $applicationTitle = 'Listagem de clientes';
+    private $filterFormTitle  = 'Filtro de clientes';
+    private $editForm         = 'ClienteFormRightPanel';
     private $keyField         = 'id';
     private $fieldFocus       = 'input_quick_search';
     private $limit;
     private $limit_padrao = 10; // 10, 15, 20, 50, 100
     private $qtd_filtros = 0;
+    private $right_panel;
 
     use ListTrait;
     
@@ -32,35 +36,50 @@ class ProdutoList extends TPage
      * Class constructor
      * Creates the page, the form and the listing
      */
-    public function __construct()
+    public function __construct($param = NULL, $right_panel = false)
     {
         parent::__construct();
+        // parent::setProperty('override', 'true');
+
+        $this->right_panel = $right_panel; // indica se o formulario está embutido noutra coisa.
+                               // Se estiver, alguns botoes e funcionalidades ficam limitados.
+        if ($this->right_panel) {
+            parent::setTargetContainer('adianti_right_panel');
+        }
         
         // creates the form
-        $this->filterForm = new BootstrapFormBuilder('form_search_'.$this->activeRecord);
-        $this->filterForm->setFormTitle('<i class="fa fa-filter"></i> '.new TLabel($this->filterFormTitle, '#000000', 12, 'b'));        
+        $this->filterForm = new BootstrapFormBuilder('form_search_'.$this->activeRecord);        
+        $this->filterForm->setFieldSizes('100%');
+        
+        $this->filterForm->setFormTitle('<i class="fa fa-filter"></i> '.new TLabel($this->filterFormTitle, '#000000', 12, 'b'));
         
         // create the form fields
         $input_quick_search = new TEntry('input_quick_search');
         $id = new TEntry('id');
-        $descricao = new TEntry('descricao');
-        $valor_compra = new TNumeric('valor_compra', 2, ',', '.', true);
-        $valor_venda = new TNumeric('valor_venda', 2, ',', '.', true);
+        $nome = new TEntry('nome');
+        $data_nascimento = new TDate('data_nascimento');
+        $sexo_id = new TDBRadioGroup('sexo_id', $this->database, 'Sexo', 'id', 'descricao');
 
         // set sizes
         $input_quick_search->setSize('200');
         $id->setSize('100%');
-        $descricao->setSize('100%');
-        $valor_compra->setSize('100%');
-        $valor_venda->setSize('100%');
+        $nome->setSize('100%');
+        $data_nascimento->setSize('100%');
+        $sexo_id->setSize('100%');
+
+        $data_nascimento->setMask('dd/mm/yyyy');
+        $data_nascimento->setDatabaseMask('yyyy-mm-dd');
+
+        $sexo_id->setLayout('horizontal');
+        $sexo_id->setUseButton();
 
         $input_quick_search->placeholder = 'Buscar';
 
         // add the fields
         $this->filterForm->addFields( [ new TLabel('Id'), $id ] );
-        $this->filterForm->addFields( [ new TLabel('Descrição'), $descricao ] );
-        $this->filterForm->addFields( [ new TLabel('Valor de compra'), $valor_compra ] );
-        $this->filterForm->addFields( [ new TLabel('Valor de venda'), $valor_venda ] );
+        $this->filterForm->addFields( [ new TLabel('Nome'), $nome ] );
+        $this->filterForm->addFields( [ new TLabel('Data de nascimento'), $data_nascimento ] );
+        $this->filterForm->addFields( [ new TLabel('Sexo'), $sexo_id ] );
         
         $btnQS = TButton::create('find', [$this, 'onSearchQS'], '', 'fa:search');
         $btnQS->style= 'height: 37px;';
@@ -91,30 +110,24 @@ class ProdutoList extends TPage
 
         // creates the datagrid columns
         $column_id = new TDataGridColumn($this->keyField, 'Id', 'right', 30);
-        $column_descricao = new TDataGridColumn('descricao', 'Descrição', 'left');
-        $column_valor_compra = new TDataGridColumn('valor_compra', 'Valor de compra', 'right');
-        $column_valor_venda = new TDataGridColumn('valor_venda', 'Valor de venda', 'right');
-        $column_lucro = new TDataGridColumn('= ({valor_venda} - {valor_compra}) *100 / {valor_venda}', 'Lucro', 'right');
+        $column_nome = new TDataGridColumn('nome', 'Nome', 'left');
+        $column_data_nascimento = new TDataGridColumn('data_nascimento', 'Data de nascimento', 'center');
+        $column_sexo_id = new TDataGridColumn('sexo->descricao', 'Sexo', 'center');
 
         $column_id->setTransformer([$this, 'formatRowSelected'] );
-        $column_valor_compra->setTransformer([$this, 'formatarMoeda']);
-        $column_valor_venda->setTransformer([$this, 'formatarMoeda']);
-        $column_lucro->setTransformer( function ($value, $object, $row) {
-            return number_format($value, 2, ',', '.').'%';
-        });
+        $column_data_nascimento->setTransformer([$this, 'formatarData']);
 
         // add the columns to the DataGrid
         $this->datagrid->addColumn($column_id);
-        $this->datagrid->addColumn($column_descricao);
-        $this->datagrid->addColumn($column_valor_compra);
-        $this->datagrid->addColumn($column_valor_venda);
-        $this->datagrid->addColumn($column_lucro);
+        $this->datagrid->addColumn($column_nome);
+        $this->datagrid->addColumn($column_data_nascimento);
+        $this->datagrid->addColumn($column_sexo_id);
 
         // creates the datagrid column actions
         $column_id->setAction(new TAction([$this, 'onReload']), ['order' => $this->keyField]);
-        $column_descricao->setAction(new TAction([$this, 'onReload']), ['order' => 'descricao']);
-        $column_valor_compra->setAction(new TAction([$this, 'onReload']), ['order' => 'valor_compra']);
-        $column_valor_venda->setAction(new TAction([$this, 'onReload']), ['order' => 'valor_venda']);
+        $column_nome->setAction(new TAction([$this, 'onReload']), ['order' => 'nome']);
+        $column_data_nascimento->setAction(new TAction([$this, 'onReload']), ['order' => 'data_nascimento']);
+        $column_sexo_id->setAction(new TAction([$this, 'onReload']), ['order' => 'sexo_id']);
 
         $action_select = new TDataGridAction([$this, 'onSelect'], [$this->keyField => '{'.$this->keyField.'}', 'register_state' => 'false']);
         $action_edit   = new TDataGridAction([$this->editForm, 'onEdit'], [$this->keyField => '{'.$this->keyField.'}', 'register_state' => 'false']);
@@ -137,7 +150,9 @@ class ProdutoList extends TPage
         // vertical box container
         $container = new TVBox;
         $container->style = 'width: 100%';
-        $container->add(new TXMLBreadCrumb('menu.xml', __CLASS__));
+        if (!$this->right_panel) {
+            $container->add(new TXMLBreadCrumb('menu.xml', __CLASS__));
+        }
         $container->add($this->panel);
         
         parent::add($container);
@@ -146,13 +161,13 @@ class ProdutoList extends TPage
     public function onClearSession()
     {
         // clear session filters
-        TSession::setValue(__CLASS__.'_filter_id',                 NULL);
-        TSession::setValue(__CLASS__.'_filter_descricao',          NULL);
-        TSession::setValue(__CLASS__.'_filter_valor_compra',       NULL);
-        TSession::setValue(__CLASS__.'_filter_valor_venda',        NULL);
+        TSession::setValue(__CLASS__.'_filter_id',              NULL);
+        TSession::setValue(__CLASS__.'_filter_nome',            NULL);
+        TSession::setValue(__CLASS__.'_filter_data_nascimento', NULL);
+        TSession::setValue(__CLASS__.'_filter_sexo_id',         NULL);
 
-        TSession::setValue(__CLASS__.'_filter_data',               NULL);
-        TSession::setValue(__CLASS__.'_filter_counter',            0);
+        TSession::setValue(__CLASS__.'_filter_data',            NULL);
+        TSession::setValue(__CLASS__.'_filter_counter',         0);
     }
     
     public static function onClose()
@@ -176,7 +191,7 @@ class ProdutoList extends TPage
         if (isset($dataQS->input_quick_search) AND ($dataQS->input_quick_search)) {
             $filterQS = [];
             $filterQS[] = new TFilter($this->keyField, '=',    $dataQS->input_quick_search); // create the filter
-            $filterQS[] = new TFilter('descricao',     'like', "%{$dataQS->input_quick_search}%"); // create the filter
+            $filterQS[] = new TFilter('nome',     'like', "%{$dataQS->input_quick_search}%"); // create the filter
             TSession::setValue(__CLASS__.'_filter_input_quick_search',        $filterQS); // stores the filter in the session
         }
         
@@ -207,21 +222,21 @@ class ProdutoList extends TPage
             $this->qtd_filtros++;
         }
 
-        if (isset($data->descricao) AND ($data->descricao)) {
-            $filter = new TFilter('descricao', 'like', "%{$data->descricao}%"); // create the filter
-            TSession::setValue(__CLASS__.'_filter_descricao',   $filter); // stores the filter in the session
+        if (isset($data->nome) AND ($data->nome)) {
+            $filter = new TFilter('nome', 'like', "%{$data->nome}%"); // create the filter
+            TSession::setValue(__CLASS__.'_filter_nome',   $filter); // stores the filter in the session
             $this->qtd_filtros++;           
         }
 
-        if (isset($data->valor_compra) AND ($data->valor_compra)) {
-            $filter = new TFilter('valor_compra', '=', $data->valor_compra); // create the filter
-            TSession::setValue(__CLASS__.'_filter_valor_compra',   $filter); // stores the filter in the session
+        if (isset($data->data_nascimento) AND ($data->data_nascimento)) {
+            $filter = new TFilter('data_nascimento', '=', $data->data_nascimento); // create the filter
+            TSession::setValue(__CLASS__.'_filter_data_nascimento',   $filter); // stores the filter in the session
             $this->qtd_filtros++;
         }
 
-        if (isset($data->valor_venda) AND ($data->valor_venda)) {
-            $filter = new TFilter('valor_venda', '=', $data->valor_venda); // create the filter
-            TSession::setValue(__CLASS__.'_filter_valor_venda',   $filter); // stores the filter in the session
+        if (isset($data->sexo_id) AND ($data->sexo_id)) {
+            $filter = new TFilter('sexo_id', '=', $data->sexo_id); // create the filter
+            TSession::setValue(__CLASS__.'_filter_sexo_id',   $filter); // stores the filter in the session
             $this->qtd_filtros++;
         }
         
@@ -247,7 +262,7 @@ class ProdutoList extends TPage
             // open a transaction with database
             TTransaction::open($this->database);
             
-            // creates a repository for Produto
+            // creates a repository for Cliente
             $repository = new TRepository($this->activeRecord);
 
             $limit = TSession::getValue(__CLASS__.'_filter_limit') ?? $this->limit_padrao;
@@ -279,16 +294,16 @@ class ProdutoList extends TPage
                 $criteria->add(TSession::getValue(__CLASS__.'_filter_id')); // add the session filter
             }
 
-            if (TSession::getValue(__CLASS__.'_filter_descricao')) {
-                $criteria->add(TSession::getValue(__CLASS__.'_filter_descricao')); // add the session filter
+            if (TSession::getValue(__CLASS__.'_filter_nome')) {
+                $criteria->add(TSession::getValue(__CLASS__.'_filter_nome')); // add the session filter
             }
 
-            if (TSession::getValue(__CLASS__.'_filter_valor_compra')) {
-                $criteria->add(TSession::getValue(__CLASS__.'_filter_valor_compra')); // add the session filter
+            if (TSession::getValue(__CLASS__.'_filter_data_nascimento')) {
+                $criteria->add(TSession::getValue(__CLASS__.'_filter_data_nascimento')); // add the session filter
             }
 
-            if (TSession::getValue(__CLASS__.'_filter_valor_venda')) {
-                $criteria->add(TSession::getValue(__CLASS__.'_filter_valor_venda')); // add the session filter
+            if (TSession::getValue(__CLASS__.'_filter_sexo_id')) {
+                $criteria->add(TSession::getValue(__CLASS__.'_filter_sexo_id')); // add the session filter
             }
             
             // load the objects according to criteria

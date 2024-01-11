@@ -7,7 +7,9 @@ class Cliente extends TRecord
 {
     const TABLENAME = 'cliente';
     const PRIMARYKEY= 'id';
-    const IDPOLICY =  'serial'; // {max, serial}    
+    const IDPOLICY =  'serial'; // {max, serial}
+
+    use SystemChangeLogTrait;
     
     private $sexo;
 

@@ -1,22 +1,21 @@
 <?php
 /**
- * ProdutoForm Form
+ * ClienteForm Form
  * @author  <your name here>
  */
-class ProdutoForm extends TPage
+class ClienteForm extends TPage
 {
     protected $form; // form
     protected $datagrid;
     protected $historico;
 
     private $database       = 'lemarq';
-    private $activeRecord   = 'Produto';
-    private $listView       = 'ProdutoList';
+    private $activeRecord   = 'Cliente';
+    private $listView       = 'ClienteList';
     private $fieldFocus     = 'descricao';
     private $keyField       = 'id';
-    private $formTitle      = 'Cadastro de Produto';
+    private $formTitle      = 'Cadastro de Cliente';
     private $right_panel;
-
     use FormTrait;
     
     /**
@@ -29,30 +28,30 @@ class ProdutoForm extends TPage
         // parent::setProperty('override', 'true');
 
         $this->right_panel = $right_panel; // indica se o formulario está embutido noutra coisa.
-                                     // Se estiver, alguns botoes e funcionalidades ficam limitados.
+                               // Se estiver, alguns botoes e funcionalidades ficam limitados.
         if ($this->right_panel) {
             parent::setTargetContainer('adianti_right_panel');
         }
 
         // creates the form
-        $this->form = new BootstrapFormBuilder('form_Produto');
+        $this->form = new BootstrapFormBuilder('form_Cliente');
         $this->form->setFormTitle(new TLabel($this->formTitle, '#000000', 14, 'b'));
-        
+
         $this->form->setFieldSizes('100%');
 
         // create the form fields
         $id = new TEntry('id');
-        $descricao = new TEntry('descricao');
-        $valor_compra = new TNumeric('valor_compra', 2, ',', '.', true);
-        $valor_venda = new TNumeric('valor_venda', 2, ',', '.', true);
+        $nome = new TEntry('nome');
+        $data_nascimento = new TDate('data_nascimento');
+        $sexo_id = new TDBRadioGroup('sexo_id', $this->database, 'Sexo', 'id', 'descricao');
 
         $historico = new BPageContainer();
 
         // set sizes
         $id->setSize('100%');
-        $descricao->setSize('100%');
-        $valor_compra->setSize('100%');
-        $valor_venda->setSize('100%');
+        $nome->setSize('100%');
+        $data_nascimento->setSize('100%');
+        $sexo_id->setSize('100%');
 
         $historico->setSize('100%');
 
@@ -61,13 +60,21 @@ class ProdutoForm extends TPage
             $id->setEditable(FALSE);
         }
 
+        $nome->forceUpperCase();
+
+        $data_nascimento->setMask('dd/mm/yyyy');
+        $data_nascimento->setDatabaseMask('yyyy-mm-dd');
+
+        $sexo_id->setLayout('horizontal');
+        $sexo_id->setUseButton();
+
         $historico->setAction(new TAction(['HistoricoList', 'onShow']));
         $historico->setId('b645e36f5cc3c4');
         $historico->hide();
 
-        $descricao->addValidation( '<b>Descrição</b>', new TRequiredValidator );
-        $valor_compra->addValidation( '<b>Valor de compra</b>', new TRequiredValidator );
-        $valor_venda->addValidation( '<b>Valor de venda</b>', new TRequiredValidator );
+        $nome->addValidation( '<b>Nome</b>', new TRequiredValidator );
+        $data_nascimento->addValidation( '<b>Data de nascimento</b>', new TRequiredValidator );
+        $sexo_id->addValidation( '<b>Sexo</b>', new TRequiredValidator );
         
         $loadingContainer = new TElement('div');
         $loadingContainer->style = 'text-align:center; padding:50px';
@@ -86,9 +93,9 @@ class ProdutoForm extends TPage
 
         // add the fields
         $this->form->addFields( [ new TLabel('Id'), $id ] );
-        $this->form->addFields( [ new TLabel('Descrição'), $descricao ] );
-        $this->form->addFields( [ new TLabel('Valor de compra'), $valor_compra ] );
-        $this->form->addFields( [ new TLabel('Valor de venda'), $valor_venda ] );
+        $this->form->addFields( [ new TLabel('Nome'), $nome ] );
+        $this->form->addFields( [ new TLabel('Data de nascimento'), $data_nascimento ] );
+        $this->form->addFields( [ new TLabel('Sexo'), $sexo_id ] );
         
         $this->form->appendPage("Históricos");
         $row = $this->form->addFields([$historico]);

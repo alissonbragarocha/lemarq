@@ -21,10 +21,12 @@
     <link href="app/templates/{template}/css/skins/_all-skins.min.css" rel="stylesheet" type="text/css" media="screen">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
+    <script src="lib/adianti/include/mdi_tabs.js" type="text/javascript"></script>
     <script>
         // set name application
         __adianti_set_name('{application}');
-
+        __adianti_init_tabs({use_tabs}, {store_tabs}, {use_mdi_windows});
+        
         function update_messages_menu() {
             $.get('engine.php?class=MessageList&theme=theme3', function(data) {
                 $('#envelope_messages').html(data);

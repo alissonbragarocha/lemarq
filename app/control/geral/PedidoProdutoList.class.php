@@ -1,9 +1,11 @@
 <?php
 
-class ProdutoHistoricoList extends TPage
+class PedidoProdutoList extends TPage
 {
     private $datagrid;
-
+    private $database     = 'lemarq';
+    private $activeRecord = 'Pedidoproduto';
+    
     use ListTrait;
     
     /**
@@ -17,51 +19,25 @@ class ProdutoHistoricoList extends TPage
         $this->datagrid = new BootstrapDatagridWrapper(new TDataGrid);
         $this->datagrid->style = 'width: 100%';
 
-        $date       = new TDataGridColumn('logdate',    _t('Date'),   'center');
-        $system_user_id = new TDataGridColumn('system_user->name',      'Usuário',   'center');
-        $column     = new TDataGridColumn('columnname', _t('Column'), 'center');
-        $operation  = new TDataGridColumn('operation',  _t('Operation'), 'center');
-        $oldvalue   = new TDataGridColumn('oldvalue',   'Valor anterior', 'left');
-        $newvalue   = new TDataGridColumn('newvalue',   _t('New value'), 'left');
-        $access_ip  = new TDataGridColumn('access_ip',  'IP', 'center');
+        $column_id = new TDataGridColumn('id', 'Id', 'right');
+        $column_produto_id = new TDataGridColumn('produto->descricao', 'Produto', 'ledt');
+        $column_valor_compra = new TDataGridColumn('valor_compra', 'Valor de Compra', 'right');
+        $column_valor_venda = new TDataGridColumn('valor_venda', 'Valor de Venda', 'right');
+        $column_usuario_cadastro_id = new TDataGridColumn('usuario_cadastro->name', 'Usuario de cadastro', 'left');
+        $column_data_cadastro = new TDataGridColumn('data_cadastro', 'Data de Cadastro', 'left');
         
-        $date->setTransformer( [$this, 'formatarDataHora'] );
-        
-        $operation->setTransformer( function($value, $object, $row) {
-            $div = new TElement('span');
-            $div->style="text-shadow:none; font-size:12px";
-            if ($value == 'created')
-            {
-                $div->class="label label-success";
-                $label = 'INSERIDO';
-            }
-            else if ($value == 'deleted')
-            {
-                $div->class="label label-danger";
-                $label = 'DELETADO';
-            }
-            else if ($value == 'changed')
-            {
-                $div->class="label label-info";
-                $label = 'ALTERADO';
-            }
-            $div->add($label);
-            return $div;
-        });
-        
-        $order = new TAction(array($this, 'onReload'), $param);        
-        $order->setParameter('order', 'logdate');
-        
-        $date->setAction($order);
-        
-        // adiciona as colunas à DataGrid
-        $this->datagrid->addColumn($date);
-        $this->datagrid->addColumn($system_user_id);
-        $this->datagrid->addColumn($column);
-        $this->datagrid->addColumn($operation);
-        $this->datagrid->addColumn($oldvalue);
-        $this->datagrid->addColumn($newvalue);
-        $this->datagrid->addColumn($access_ip);
+        $column_data_cadastro->setTransformer( [$this, 'formatarDataHora'] );
+
+        // creates the datagrid column actions
+        $column_id->setAction(new TAction([$this, 'onReload']), ['order' => $this->keyField]);
+
+        // add the columns to the DataGrid
+        $this->datagrid->addColumn($column_id);
+        $this->datagrid->addColumn($column_produto_id);
+        $this->datagrid->addColumn($column_valor_compra);
+        $this->datagrid->addColumn($column_valor_venda);
+        $this->datagrid->addColumn($column_data_cadastro);
+        $this->datagrid->addColumn($column_usuario_cadastro_id);
         
         // cria o modelo da DataGrid, montando sua estrutura
         $this->datagrid->createModel();
@@ -88,10 +64,10 @@ class ProdutoHistoricoList extends TPage
         try
         {
             // open a transaction with database
-            TTransaction::open('log');
+            TTransaction::open($this->database);
             
             // creates a repository for Produto
-            $repository = new TRepository('SystemChangeLog');
+            $repository = new TRepository($this->activeRecord);
 
             $limit = 10;
 
@@ -107,8 +83,7 @@ class ProdutoHistoricoList extends TPage
             $criteria->setProperties($param); // order, offset
             $criteria->setProperty('limit', $limit);
 
-            $criteria->add(new TFilter('tablename', '=', 'produto'));
-            $criteria->add(new TFilter('pkvalue', '=', $param['key']));
+            $criteria->add(new TFilter('pedido_id', '=', $param['key']));
             
             // load the objects according to criteria
             $objects = $repository->load($criteria, FALSE);

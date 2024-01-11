@@ -1,9 +1,13 @@
 <?php
+
+use Adianti\Widget\Form\TDateTime;
+use Adianti\Widget\Wrapper\TDBUniqueSearch;
+
 /**
- * ProdutoList Listing
+ * PedidoList Listing
  * @author  <your name here>
  */
-class ProdutoList extends TPage
+class PedidoList extends TPage
 {
     private $quick_search; // form
     private $filterForm; // form
@@ -16,10 +20,10 @@ class ProdutoList extends TPage
     private $selectAll;
 
     private $database         = 'lemarq';
-    private $activeRecord     = 'Produto';
-    private $applicationTitle = 'Listagem de produtos';
-    private $filterFormTitle  = 'Filtro de produtos';
-    private $editForm         = 'ProdutoForm';
+    private $activeRecord     = 'Pedido';
+    private $applicationTitle = 'Listagem de pedidos';
+    private $filterFormTitle  = 'Filtro de pedidos';
+    private $editForm         = 'PedidoForm';
     private $keyField         = 'id';
     private $fieldFocus       = 'input_quick_search';
     private $limit;
@@ -43,24 +47,21 @@ class ProdutoList extends TPage
         // create the form fields
         $input_quick_search = new TEntry('input_quick_search');
         $id = new TEntry('id');
-        $descricao = new TEntry('descricao');
-        $valor_compra = new TNumeric('valor_compra', 2, ',', '.', true);
-        $valor_venda = new TNumeric('valor_venda', 2, ',', '.', true);
+        $cliente_id = new TDBUniqueSearch('cliente_id', $this->database, 'Cliente', 'id', 'nome');
+        $usuario_cadastro_id = new TDBUniqueSearch('usuario_cadastro_id', $this->database, 'SystemUser', 'id', 'name');
 
         // set sizes
         $input_quick_search->setSize('200');
         $id->setSize('100%');
-        $descricao->setSize('100%');
-        $valor_compra->setSize('100%');
-        $valor_venda->setSize('100%');
+        $cliente_id->setSize('100%');
+        $usuario_cadastro_id->setSize('100%');
 
         $input_quick_search->placeholder = 'Buscar';
 
         // add the fields
         $this->filterForm->addFields( [ new TLabel('Id'), $id ] );
-        $this->filterForm->addFields( [ new TLabel('Descrição'), $descricao ] );
-        $this->filterForm->addFields( [ new TLabel('Valor de compra'), $valor_compra ] );
-        $this->filterForm->addFields( [ new TLabel('Valor de venda'), $valor_venda ] );
+        $this->filterForm->addFields( [ new TLabel('Cliente'), $cliente_id ] );
+        $this->filterForm->addFields( [ new TLabel('Usuário de cadastro'), $usuario_cadastro_id ] );
         
         $btnQS = TButton::create('find', [$this, 'onSearchQS'], '', 'fa:search');
         $btnQS->style= 'height: 37px;';
@@ -91,30 +92,24 @@ class ProdutoList extends TPage
 
         // creates the datagrid columns
         $column_id = new TDataGridColumn($this->keyField, 'Id', 'right', 30);
-        $column_descricao = new TDataGridColumn('descricao', 'Descrição', 'left');
-        $column_valor_compra = new TDataGridColumn('valor_compra', 'Valor de compra', 'right');
-        $column_valor_venda = new TDataGridColumn('valor_venda', 'Valor de venda', 'right');
-        $column_lucro = new TDataGridColumn('= ({valor_venda} - {valor_compra}) *100 / {valor_venda}', 'Lucro', 'right');
+        $column_cliente_id = new TDataGridColumn('cliente->nome', 'Cliente', 'left');
+        $column_usuario_cadastro_id = new TDataGridColumn('usuario_cadastro->name', 'Usuário de cadastro', 'left');
+        $column_data_cadastro = new TDataGridColumn('data_cadastro', 'Data', 'center');
 
         $column_id->setTransformer([$this, 'formatRowSelected'] );
-        $column_valor_compra->setTransformer([$this, 'formatarMoeda']);
-        $column_valor_venda->setTransformer([$this, 'formatarMoeda']);
-        $column_lucro->setTransformer( function ($value, $object, $row) {
-            return number_format($value, 2, ',', '.').'%';
-        });
+        $column_data_cadastro->setTransformer( [$this, 'formatarDataHora'] );
 
         // add the columns to the DataGrid
         $this->datagrid->addColumn($column_id);
-        $this->datagrid->addColumn($column_descricao);
-        $this->datagrid->addColumn($column_valor_compra);
-        $this->datagrid->addColumn($column_valor_venda);
-        $this->datagrid->addColumn($column_lucro);
+        $this->datagrid->addColumn($column_cliente_id);
+        $this->datagrid->addColumn($column_usuario_cadastro_id);
+        $this->datagrid->addColumn($column_data_cadastro);
 
         // creates the datagrid column actions
         $column_id->setAction(new TAction([$this, 'onReload']), ['order' => $this->keyField]);
-        $column_descricao->setAction(new TAction([$this, 'onReload']), ['order' => 'descricao']);
-        $column_valor_compra->setAction(new TAction([$this, 'onReload']), ['order' => 'valor_compra']);
-        $column_valor_venda->setAction(new TAction([$this, 'onReload']), ['order' => 'valor_venda']);
+        $column_cliente_id->setAction(new TAction([$this, 'onReload']), ['order' => 'descricao']);
+        $column_usuario_cadastro_id->setAction(new TAction([$this, 'onReload']), ['order' => 'valor_compra']);
+        $column_data_cadastro->setAction(new TAction([$this, 'onReload']), ['order' => 'valor_venda']);
 
         $action_select = new TDataGridAction([$this, 'onSelect'], [$this->keyField => '{'.$this->keyField.'}', 'register_state' => 'false']);
         $action_edit   = new TDataGridAction([$this->editForm, 'onEdit'], [$this->keyField => '{'.$this->keyField.'}', 'register_state' => 'false']);
@@ -146,10 +141,9 @@ class ProdutoList extends TPage
     public function onClearSession()
     {
         // clear session filters
-        TSession::setValue(__CLASS__.'_filter_id',                 NULL);
-        TSession::setValue(__CLASS__.'_filter_descricao',          NULL);
-        TSession::setValue(__CLASS__.'_filter_valor_compra',       NULL);
-        TSession::setValue(__CLASS__.'_filter_valor_venda',        NULL);
+        TSession::setValue(__CLASS__.'_filter_id',                  NULL);
+        TSession::setValue(__CLASS__.'_filter_cliente_id',          NULL);
+        TSession::setValue(__CLASS__.'_filter_usuario_cadastro_id', NULL);
 
         TSession::setValue(__CLASS__.'_filter_data',               NULL);
         TSession::setValue(__CLASS__.'_filter_counter',            0);
@@ -176,7 +170,6 @@ class ProdutoList extends TPage
         if (isset($dataQS->input_quick_search) AND ($dataQS->input_quick_search)) {
             $filterQS = [];
             $filterQS[] = new TFilter($this->keyField, '=',    $dataQS->input_quick_search); // create the filter
-            $filterQS[] = new TFilter('descricao',     'like', "%{$dataQS->input_quick_search}%"); // create the filter
             TSession::setValue(__CLASS__.'_filter_input_quick_search',        $filterQS); // stores the filter in the session
         }
         
@@ -207,21 +200,15 @@ class ProdutoList extends TPage
             $this->qtd_filtros++;
         }
 
-        if (isset($data->descricao) AND ($data->descricao)) {
-            $filter = new TFilter('descricao', 'like', "%{$data->descricao}%"); // create the filter
-            TSession::setValue(__CLASS__.'_filter_descricao',   $filter); // stores the filter in the session
+        if (isset($data->cliente_id) AND ($data->cliente_id)) {
+            $filter = new TFilter('cliente_id', '=', $data->cliente_id); // create the filter
+            TSession::setValue(__CLASS__.'_filter_cliente_id',   $filter); // stores the filter in the session
             $this->qtd_filtros++;           
         }
 
-        if (isset($data->valor_compra) AND ($data->valor_compra)) {
-            $filter = new TFilter('valor_compra', '=', $data->valor_compra); // create the filter
-            TSession::setValue(__CLASS__.'_filter_valor_compra',   $filter); // stores the filter in the session
-            $this->qtd_filtros++;
-        }
-
-        if (isset($data->valor_venda) AND ($data->valor_venda)) {
-            $filter = new TFilter('valor_venda', '=', $data->valor_venda); // create the filter
-            TSession::setValue(__CLASS__.'_filter_valor_venda',   $filter); // stores the filter in the session
+        if (isset($data->usuario_cadastro_id) AND ($data->usuario_cadastro_id)) {
+            $filter = new TFilter('usuario_cadastro_id', '=', $data->usuario_cadastro_id); // create the filter
+            TSession::setValue(__CLASS__.'_filter_usuario_cadastro_id',   $filter); // stores the filter in the session
             $this->qtd_filtros++;
         }
         
@@ -247,7 +234,7 @@ class ProdutoList extends TPage
             // open a transaction with database
             TTransaction::open($this->database);
             
-            // creates a repository for Produto
+            // creates a repository for Pedido
             $repository = new TRepository($this->activeRecord);
 
             $limit = TSession::getValue(__CLASS__.'_filter_limit') ?? $this->limit_padrao;
@@ -279,16 +266,12 @@ class ProdutoList extends TPage
                 $criteria->add(TSession::getValue(__CLASS__.'_filter_id')); // add the session filter
             }
 
-            if (TSession::getValue(__CLASS__.'_filter_descricao')) {
-                $criteria->add(TSession::getValue(__CLASS__.'_filter_descricao')); // add the session filter
+            if (TSession::getValue(__CLASS__.'_filter_cliente_id')) {
+                $criteria->add(TSession::getValue(__CLASS__.'_filter_cliente_id')); // add the session filter
             }
 
-            if (TSession::getValue(__CLASS__.'_filter_valor_compra')) {
-                $criteria->add(TSession::getValue(__CLASS__.'_filter_valor_compra')); // add the session filter
-            }
-
-            if (TSession::getValue(__CLASS__.'_filter_valor_venda')) {
-                $criteria->add(TSession::getValue(__CLASS__.'_filter_valor_venda')); // add the session filter
+            if (TSession::getValue(__CLASS__.'_filter_usuario_cadastro_id')) {
+                $criteria->add(TSession::getValue(__CLASS__.'_filter_usuario_cadastro_id')); // add the session filter
             }
             
             // load the objects according to criteria
